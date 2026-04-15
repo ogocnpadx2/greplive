@@ -76,17 +76,11 @@ func runLines(
 	for {
 		select {
 		case <-ctx.Done():
-			if reporter != nil {
-				reporter.Stop()
-				reporter.Print()
-			}
+			flushReporter(reporter)
 			return nil
 		case line, ok := <-lines:
 			if !ok {
-				if reporter != nil {
-					reporter.Stop()
-					reporter.Print()
-				}
+				flushReporter(reporter)
 				return nil
 			}
 			st.IncrRead()
@@ -100,5 +94,14 @@ func runLines(
 			coloured := highlight.ApplyAll(line, highlighters)
 			w.WriteLine(coloured, lvl)
 		}
+	}
+}
+
+// flushReporter stops the reporter and prints a final stats summary, if one
+// was configured. It is a no-op when reporter is nil.
+func flushReporter(reporter *stats.Reporter) {
+	if reporter != nil {
+		reporter.Stop()
+		reporter.Print()
 	}
 }
