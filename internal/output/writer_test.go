@@ -71,3 +71,15 @@ func TestWriteLine_MultipleLines(t *testing.T) {
 		t.Errorf("expected 3 output lines, got %d: %q", len(parts), got)
 	}
 }
+
+func TestWriteLine_EmptyMessage(t *testing.T) {
+	var buf bytes.Buffer
+	w := output.New(&buf)
+	w.WriteLine("")
+
+	got := buf.String()
+	// Even an empty message should produce a newline-terminated line
+	if !strings.HasSuffix(got, "\n") {
+		t.Errorf("expected output to end with newline for empty message, got: %q", got)
+	}
+}
