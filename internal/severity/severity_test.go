@@ -89,3 +89,21 @@ func TestParseLevel(t *testing.T) {
 		}
 	}
 }
+
+// TestParseLevelRoundTrip verifies that parsing the string representation of a
+// level produces the original level back.
+func TestParseLevelRoundTrip(t *testing.T) {
+	levels := []severity.Level{
+		severity.Debug,
+		severity.Info,
+		severity.Warn,
+		severity.Error,
+		severity.Fatal,
+	}
+	for _, level := range levels {
+		got := severity.ParseLevel(level.String())
+		if got != level {
+			t.Errorf("ParseLevel((%v).String()) = %v, want %v", level, got, level)
+		}
+	}
+}
