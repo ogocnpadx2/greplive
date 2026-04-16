@@ -75,3 +75,10 @@ func TestParseFlags_InvalidFlag(t *testing.T) {
 		t.Fatal("expected error for unknown flag")
 	}
 }
+
+func TestParseFlags_InvalidStatsInterval(t *testing.T) {
+	_, err := ParseFlags([]string{"-stats-interval", "notaduration"})
+	if err == nil {
+		t.Fatal("expected error for invalid stats interval")
+	}
+}
