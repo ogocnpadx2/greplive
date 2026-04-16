@@ -53,12 +53,7 @@ func TestLines_SkipsEmptyLines(t *testing.T) {
 }
 
 func TestLines_ContextCancellation(t *testing.T) {
-	// Use a pipe so the reader blocks, giving us time to cancel.
-	pr, pw := strings.NewReader(""), strings.NewReader("")
-	_ = pr
-	_ = pw
-
-	// Simpler: write many lines and cancel early.
+	// Write many lines and cancel early to verify the goroutine stops.
 	var sb strings.Builder
 	for i := 0; i < 1000; i++ {
 		sb.WriteString("log line\n")
@@ -104,5 +99,32 @@ func TestLines_EmptyReader(t *testing.T) {
 	}
 	if len(got) != 0 {
 		t.Errorf("expected no lines, got %v", got)
+	}
+}
+
+func TestLines_NoTrailingNewline(t *testing.T) {
+	// Ensure the last line is emitted even when not terminated by a newline.
+	src := strings.NewReader("first\nsecond\nthird")
+	r := input.New(src)
+
+	lines, errs := r.Lines(context.Background())
+
+	var got []string
+	for line := range lines {
+		got = append(got, line)
+	}
+
+	if err := <-errs; err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := []string{"first", "second", "third"}
+	if len(got) != len(expected) {
+		t.Fatalf("expected %d lines, got %d: %v", len(expected), len(got), got)
+	}
+	for i, e := range expected {
+		if got[i] != e {
+			t.Errorf("line %d: expected %q, got %q", i, e, got[i])
+		}
 	}
 }
