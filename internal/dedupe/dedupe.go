@@ -58,6 +58,15 @@ func (d *Deduper) Flush() string {
 	return s
 }
 
+// Stats returns the current repeated line and how many times it has been
+// seen so far (including the first occurrence). Returns an empty string
+// and zero if no line has been seen yet.
+func (d *Deduper) Stats() (line string, count int) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	return d.last, d.count
+}
+
 // Reset clears all state, useful between log sources.
 func (d *Deduper) Reset() {
 	d.mu.Lock()
