@@ -128,3 +128,30 @@ func TestLines_NoTrailingNewline(t *testing.T) {
 		}
 	}
 }
+
+func TestLines_WhitespaceOnlyLines(t *testing.T) {
+	// Lines containing only spaces or tabs should be treated as empty and skipped.
+	src := strings.NewReader("hello\n   \nworld\n\t\n")
+	r := input.New(src)
+
+	lines, errs := r.Lines(context.Background())
+
+	var got []string
+	for line := range lines {
+		got = append(got, line)
+	}
+
+	if err := <-errs; err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := []string{"hello", "world"}
+	if len(got) != len(expected) {
+		t.Fatalf("expected %d lines, got %d: %v", len(expected), len(got), got)
+	}
+	for i, e := range expected {
+		if got[i] != e {
+			t.Errorf("line %d: expected %q, got %q", i, e, got[i])
+		}
+	}
+}
