@@ -57,6 +57,16 @@ func (c *Counters) Elapsed() time.Duration {
 	return time.Since(c.StartTime)
 }
 
+// MatchRate returns the fraction of read lines that matched, in the range
+// [0.0, 1.0]. Returns 0 if no lines have been read yet.
+func (c *Counters) MatchRate() float64 {
+	read := c.LinesRead.Load()
+	if read == 0 {
+		return 0
+	}
+	return float64(c.LinesMatched.Load()) / float64(read)
+}
+
 // Snapshot returns an immutable point-in-time view of the counters.
 type Snapshot struct {
 	LinesRead      int64
@@ -64,6 +74,7 @@ type Snapshot struct {
 	LinesDropped   int64
 	Elapsed        time.Duration
 	SeverityCounts map[string]int64
+	MatchRate      float64
 }
 
 // Snapshot captures the current state of the counters.
@@ -74,5 +85,6 @@ func (c *Counters) Snapshot() Snapshot {
 		LinesDropped:   c.LinesDropped.Load(),
 		Elapsed:        c.Elapsed(),
 		SeverityCounts: c.SeverityCounts(),
+		MatchRate:      c.MatchRate(),
 	}
 }
