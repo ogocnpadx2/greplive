@@ -4,62 +4,57 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"os"
-
-	"github.com/user/greplive/internal/severity"
+	"time"
 )
 
-// Flags holds all parsed command-line options.
+// Flags holds all parsed CLI options.
 type Flags struct {
 	Pattern       string
-	Level         severity.Level
+	Level         string
 	Follow        bool
-	File          string
 	Timestamp     bool
-	Rate          int
+	StatsInterval time.Duration
+	JSON          bool
+	MaxRate       int
 	Dedupe        bool
-	MaxLineLen    int
-	CheckpointFile string
+	MaxLen        int
+	Before        int
+	After         int
 }
 
-// ParseFlags parses os.Args and returns a populated Flags or an error.
-func ParseFlags(args []string) (*Flags, error) {
-	fs := flag.NewFlagSet("greplive", flag.ContinueOnError)
-	fs.SetOutput(os.Stderr)
+// ParseFlags parses os.Args using the provided FlagSet and returns Flags.
+func ParseFlags(fs *flag.FlagSet, args []string) (Flags, error) {
+	var f Flags
+	var statsStr string
+	var levelStr string
 
-	var (
-		pattern    = fs.String("pattern", "", "regex pattern to filter lines")
-		levelStr   = fs.String("level", "any", "minimum severity level (debug|info|warn|error|fatal|any)")
-		follow     = fs.Bool("follow", false, "tail the file and follow new lines")
-		file       = fs.String("file", "", "file to read (defaults to stdin)")
-		timestamp  = fs.Bool("timestamp", false, "prefix each line with current timestamp")
-		rate       = fs.Int("rate", 0, "max lines per second (0 = unlimited)")
-		dedupe     = fs.Bool("dedupe", false, "suppress consecutive duplicate lines")
-		maxLen     = fs.Int("max-line-len", 0, "truncate lines longer than this (0 = disabled)")
-		checkpoint = fs.String("checkpoint", "", "path to checkpoint file for resuming tailed files")
-	)
+	fs.StringVar(&f.Pattern, "pattern", "", "regex filter pattern")
+	fs.StringVar(&levelStr, "level", "any", "minimum severity level (debug|info|warn|error|fatal|any)")
+	fs.BoolVar(&f.Follow, "follow", false, "tail file and follow new lines")
+	fs.BoolVar(&f.Timestamp, "timestamp", false, "prefix output with timestamp")
+	fs.StringVar(&statsStr, "stats", "0s", "stats reporting interval (0 to disable)")
+	fs.BoolVar(&f.JSON, "json", false, "output lines as JSON")
+	fs.IntVar(&f.MaxRate, "max-rate", 0, "max lines per second (0 = unlimited)")
+	fs.BoolVar(&f.Dedupe, "dedupe", false, "suppress duplicate consecutive lines")
+	fs.IntVar(&f.MaxLen, "max-len", 0, "truncate lines to N runes (0 = off)")
+	fs.IntVar(&f.Before, "before", 0, "context lines before match")
+	fs.IntVar(&f.After, "after", 0, "context lines after match")
 
 	if err := fs.Parse(args); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return nil, err
-		}
-		return nil, fmt.Errorf("flag parse: %w", err)
+		return Flags{}, err
 	}
 
-	lvl, err := severity.ParseLevel(*levelStr)
+	validLevels := map[string]bool{"debug": true, "info": true, "warn": true, "error": true, "fatal": true, "any": true}
+	if !validLevels[levelStr] {
+		return Flags{}, fmt.Errorf("invalid level %q", levelStr)
+	}
+	f.Level = levelStr
+
+	d, err := time.ParseDuration(statsStr)
 	if err != nil {
-		return nil, fmt.Errorf("invalid level %q: %w", *levelStr, err)
+		return Flags{}, errors.New("invalid stats interval: " + err.Error())
 	}
+	f.StatsInterval = d
 
-	return &Flags{
-		Pattern:        *pattern,
-		Level:          lvl,
-		Follow:         *follow,
-		File:           *file,
-		Timestamp:      *timestamp,
-		Rate:           *rate,
-		Dedupe:         *dedupe,
-		MaxLineLen:     *maxLen,
-		CheckpointFile: *checkpoint,
-	}, nil
+	return f, nil
 }

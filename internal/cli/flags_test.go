@@ -1,83 +1,75 @@
 package cli
 
 import (
+	"flag"
 	"testing"
 	"time"
-
-	"github.com/user/greplive/internal/severity"
 )
 
+func newFS() *flag.FlagSet {
+	return flag.NewFlagSet("test", flag.ContinueOnError)
+}
+
 func TestParseFlags_Defaults(t *testing.T) {
-	cfg, err := ParseFlags([]string{})
+	f, err := ParseFlags(newFS(), nil)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal(err)
 	}
-	if cfg.Pattern != "" {
-		t.Errorf("expected empty pattern, got %q", cfg.Pattern)
+	if f.Pattern != "" || f.Level != "any" || f.Follow || f.Timestamp {
+		t.Fatalf("unexpected defaults: %+v", f)
 	}
-	if cfg.MinLevel != severity.Debug {
-		t.Errorf("expected debug level, got %v", cfg.MinLevel)
-	}
-	if cfg.ShowTimestamp {
-		t.Error("expected ShowTimestamp false")
-	}
-	if cfg.StatsInterval != 5*time.Second {
-		t.Errorf("expected 5s stats interval, got %v", cfg.StatsInterval)
+	if f.StatsInterval != 0 {
+		t.Fatalf("expected zero stats interval, got %v", f.StatsInterval)
 	}
 }
 
 func TestParseFlags_AllFlags(t *testing.T) {
-	cfg, err := ParseFlags([]string{
+	args := []string{
 		"-pattern", "ERROR",
 		"-level", "warn",
-		"-file", "/var/log/app.log",
+		"-follow",
 		"-timestamp",
-		"-level-prefix",
-		"-stats",
-		"-stats-interval", "10s",
-	})
+		"-stats", "5s",
+		"-json",
+		"-max-rate", "100",
+		"-dedupe",
+		"-max-len", "200",
+		"-before", "2",
+		"-after", "3",
+	}
+	f, err := ParseFlags(newFS(), args)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatal(err)
 	}
-	if cfg.Pattern != "ERROR" {
-		t.Errorf("expected pattern ERROR, got %q", cfg.Pattern)
-	}
-	if cfg.MinLevel != severity.Warn {
-		t.Errorf("expected warn level, got %v", cfg.MinLevel)
-	}
-	if cfg.File != "/var/log/app.log" {
-		t.Errorf("expected file /var/log/app.log, got %q", cfg.File)
-	}
-	if !cfg.ShowTimestamp {
-		t.Error("expected ShowTimestamp true")
-	}
-	if !cfg.ShowLevel {
-		t.Error("expected ShowLevel true")
-	}
-	if !cfg.ShowStats {
-		t.Error("expected ShowStats true")
-	}
-	if cfg.StatsInterval != 10*time.Second {
-		t.Errorf("expected 10s, got %v", cfg.StatsInterval)
-	}
+	if f.Pattern != "ERROR" { t.Error("pattern") }
+	if f.Level != "warn" { t.Error("level") }
+	if !f.Follow { t.Error("follow") }
+	if !f.Timestamp { t.Error("timestamp") }
+	if f.StatsInterval != 5*time.Second { t.Error("stats") }
+	if !f.JSON { t.Error("json") }
+	if f.MaxRate != 100 { t.Error("max-rate") }
+	if !f.Dedupe { t.Error("dedupe") }
+	if f.MaxLen != 200 { t.Error("max-len") }
+	if f.Before != 2 { t.Error("before") }
+	if f.After != 3 { t.Error("after") }
 }
 
 func TestParseFlags_InvalidLevel(t *testing.T) {
-	_, err := ParseFlags([]string{"-level", "verbose"})
+	_, err := ParseFlags(newFS(), []string{"-level", "verbose"})
 	if err == nil {
-		t.Fatal("expected error for unknown level")
+		t.Fatal("expected error for invalid level")
 	}
 }
 
 func TestParseFlags_InvalidFlag(t *testing.T) {
-	_, err := ParseFlags([]string{"-nonexistent"})
+	_, err := ParseFlags(newFS(), []string{"-unknown"})
 	if err == nil {
 		t.Fatal("expected error for unknown flag")
 	}
 }
 
 func TestParseFlags_InvalidStatsInterval(t *testing.T) {
-	_, err := ParseFlags([]string{"-stats-interval", "notaduration"})
+	_, err := ParseFlags(newFS(), []string{"-stats", "notaduration"})
 	if err == nil {
 		t.Fatal("expected error for invalid stats interval")
 	}
