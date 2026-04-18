@@ -81,3 +81,17 @@ func (j *jsonFormatter) Format(e Entry) string {
 	}
 	return string(b)
 }
+
+// ParseMode converts a string to a Mode, returning an error if unrecognised.
+// This allows callers to validate user-supplied format flags before constructing
+// a Formatter.
+func ParseMode(s string) (Mode, error) {
+	switch Mode(strings.ToLower(s)) {
+	case ModePlain:
+		return ModePlain, nil
+	case ModeJSON:
+		return ModeJSON, nil
+	default:
+		return ModePlain, fmt.Errorf("unknown format mode %q: must be one of \"plain\", \"json\"", s)
+	}
+}
