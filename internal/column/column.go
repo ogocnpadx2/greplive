@@ -55,3 +55,10 @@ func ApplyAll(extractors []*Extractor, line string) string {
 	}
 	return line
 }
+
+// Count returns the number of fields in line when split by the extractor's
+// delimiter. This is useful for inspecting line structure before selecting
+// column indices.
+func (e *Extractor) Count(line string) int {
+	return len(strings.Split(line, e.delimiter))
+}
