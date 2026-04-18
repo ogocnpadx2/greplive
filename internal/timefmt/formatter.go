@@ -32,3 +32,8 @@ func (f Formatter) Now() string {
 func (f Formatter) FormatName() string {
 	return f.fmt.Name()
 }
+
+// IsUTC reports whether the Formatter converts times to UTC before formatting.
+func (f Formatter) IsUTC() bool {
+	return f.utc
+}
