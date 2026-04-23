@@ -92,3 +92,23 @@ func TestPush_SingleMatch_MergesAsIs(t *testing.T) {
 		t.Fatalf("unexpected: %q %v", out, ok)
 	}
 }
+
+func TestPush_NonMatch_AfterFlush_PassesThrough(t *testing.T) {
+	// After flushing buffered matches, the triggering non-match line
+	// should be returned by the next Push call (not silently dropped).
+	s, _ := New(`^DEBUG`)
+	s.Push("DEBUG a")
+	merged, ok := s.Push("INFO done")
+	if !ok {
+		t.Fatal("expected emit of merged buffer")
+	}
+	if merged != "DEBUG a" {
+		t.Fatalf("unexpected merged: %q", merged)
+	}
+	// The non-matching line "INFO done" should now be emittable via Flush
+	// or pass through on the next non-matching push.
+	out, ok := s.Flush()
+	if ok {
+		t.Fatalf("expected empty buffer after non-match flush, got %q", out)
+	}
+}
