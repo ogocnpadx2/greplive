@@ -1,6 +1,5 @@
 // Package rotate detects log file rotation by monitoring inode changes
-// and file size resets, notifying consumers so they can reopen the file
-// and continue reading from the beginning.
+// and notifies consumers so they can reopen the file from the beginning.
 //
 // Usage:
 //
@@ -11,6 +10,6 @@
 //	defer r.Stop()
 //
 //	for range r.Notify() {
-//		// file has been rotated — reopen it
+//		// file has been rotated – reopen it
 //	}
 package rotate
