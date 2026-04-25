@@ -1,16 +1,16 @@
-// Package rotate detects log file rotation by monitoring inode
-// changes and file truncation, emitting notifications so the tail
-// reader can reopen the file and resume streaming from the start.
+// Package rotate detects log file rotation by monitoring inode changes
+// and file size resets, notifying consumers so they can reopen the file
+// and continue reading from the beginning.
 //
 // Usage:
 //
-//	mon, err := rotate.New("/var/log/app.log")
+//	r, err := rotate.New("/var/log/app.log", rotate.DefaultInterval)
 //	if err != nil {
 //		log.Fatal(err)
 //	}
-//	defer mon.Stop()
+//	defer r.Stop()
 //
-//	for range mon.Notify() {
-//		// file has been rotated – reopen it
+//	for range r.Notify() {
+//		// file has been rotated — reopen it
 //	}
 package rotate
