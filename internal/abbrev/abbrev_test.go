@@ -99,3 +99,13 @@ func TestApply_CustomSuffix(t *testing.T) {
 		t.Fatalf("expected custom suffix, got %q", got)
 	}
 }
+
+func TestApply_ExactLength_Unchanged(t *testing.T) {
+	// A line whose rune count exactly equals maxRunes should not be truncated.
+	a := New(5, "…", false)
+	line := "hello" // exactly 5 runes
+	got := a.Apply(line)
+	if got != line {
+		t.Fatalf("expected %q unchanged, got %q", line, got)
+	}
+}
